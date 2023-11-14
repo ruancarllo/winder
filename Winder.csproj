@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Title>Winder</Title>
+    <Description>A command that harmonize an object normals</Description>
+  </PropertyGroup>
+  <PropertyGroup>
+    <Version>1.0</Version>
+    <TargetExt>.rhp</TargetExt>
+    <TargetFramework>net48</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="RhinoCommon" Version="8.0.23304.9001"/>
+  </ItemGroup>
+</Project>
