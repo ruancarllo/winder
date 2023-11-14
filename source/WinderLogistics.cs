@@ -32,29 +32,14 @@ namespace WinderLogistics {
       WinderWorkers.ProcessesExecutor processesExecutor = new WinderWorkers.ProcessesExecutor(true);
 
       processesExecutor.SetSeletedObjects();
-      Rhino.RhinoApp.WriteLine("SETTED SELECTED OBJECTS");
-
       processesExecutor.FilterBoundaryObjects();
-      Rhino.RhinoApp.WriteLine("FILTERED BOUNDARY OBJECTS");
-
       processesExecutor.PickBoundaryGeometries();
-      Rhino.RhinoApp.WriteLine("PICKED BOUNDARY GEOMETRIES");
-
       processesExecutor.ProcessJoinedGeometries();
-      Rhino.RhinoApp.WriteLine("PROCESSED JOINED GEOMETRIES");
-
       processesExecutor.CalculateBoundaryMathematics();
-      Rhino.RhinoApp.WriteLine("CALCULATED BOUNDARY MATHEMATICS");
-
       processesExecutor.InitializeCorrelatedParameters();
-      Rhino.RhinoApp.WriteLine("INITIALIZED CORRELATED PARAMETERS");
-
       processesExecutor.CalculateFlipPunctuations();
-      Rhino.RhinoApp.WriteLine("CALCULATED FLIP PUNCTUATIONS");
-
       processesExecutor.HarmonizeBoundaryNormals();
-      Rhino.RhinoApp.WriteLine("HARMONIZED BOUNDARY NORMALS");
-
+ 
       Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
 
       return Rhino.Commands.Result.Success;

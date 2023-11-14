@@ -290,13 +290,15 @@ namespace WinderWorkers {
             this.ObjectsFlipPunctuation[objectGuid.ToString()] += 1;
           }
         }
+
+        Rhino.RhinoApp.WriteLine("Winder: Analyzed mesh face " + (correlatedIndex + 1).ToString() + " of " + this.CorrelatedCount.ToString());
       }
     }
   
     public void HarmonizeBoundaryNormals() {
       foreach (System.Collections.Generic.KeyValuePair<System.String, System.Int32> keyValuePair in this.ObjectsFlipPunctuation) {
         System.Guid objectGuid = System.Guid.Parse(keyValuePair.Key);
-        System.Int32 flipPunctuation = ObjectsFlipPunctuation[keyValuePair.Key];
+        System.Int32 flipPunctuation = this.ObjectsFlipPunctuation[keyValuePair.Key];
 
         Rhino.DocObjects.BrepObject analyzingObject = Rhino.RhinoDoc.ActiveDoc.Objects.Find(objectGuid) as Rhino.DocObjects.BrepObject;
 
