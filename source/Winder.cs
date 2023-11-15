@@ -29,7 +29,7 @@ namespace WinderLogistics {
     }
 
     protected override Rhino.Commands.Result RunCommand(Rhino.RhinoDoc activeDocument, Rhino.Commands.RunMode runMode) {
-      WinderWorkers.ProcessesExecutor processesExecutor = new WinderWorkers.ProcessesExecutor(true, true);
+      WinderWorkers.ProcessesExecutor processesExecutor = new WinderWorkers.ProcessesExecutor(true, true, true);
 
       processesExecutor.SetSeletedObjects();
       processesExecutor.SetBoundaryObjects();
@@ -49,6 +49,7 @@ namespace WinderWorkers {
   public class ProcessesExecutor {
     private readonly System.Boolean VerboseMode;
     private readonly System.Boolean LayeredMode;
+    private readonly System.Boolean InteractiveMode;
 
     private readonly System.Collections.Generic.List<Rhino.DocObjects.RhinoObject> SelectedObjects;
     private readonly System.Collections.Generic.List<Rhino.DocObjects.BrepObject> BoundaryObjects;
@@ -61,14 +62,16 @@ namespace WinderWorkers {
     private readonly System.Int32 WrongLayerIndex;
     private readonly System.Int32 CorrectLayerIndex;
     private readonly System.Int32 ModifyedLayerIndex;
+    private readonly System.Int32 InteractiveLayerIndex;
 
     private static readonly Rhino.Geometry.MeshingParameters MinimalMeshingParameters = new Rhino.Geometry.MeshingParameters(0.0);
     private static readonly System.Double MaximumDistanceTolerance = 0.001;
     private static readonly System.Double DefaultT3Coordinate = 0.0;
 
-    public ProcessesExecutor(System.Boolean verboseMode, System.Boolean layeredMode) {
+    public ProcessesExecutor(System.Boolean verboseMode, System.Boolean layeredMode, System.Boolean interactiveMode) {
       this.VerboseMode = verboseMode;
       this.LayeredMode = layeredMode;
+      this.InteractiveMode = interactiveMode;
 
       this.SelectedObjects = new System.Collections.Generic.List<Rhino.DocObjects.RhinoObject>();
       this.BoundaryObjects = new System.Collections.Generic.List<Rhino.DocObjects.BrepObject>();
@@ -82,6 +85,10 @@ namespace WinderWorkers {
         this.WrongLayerIndex = WinderWorkers.ProcessesExecutor.CreateOrGetLayerIndex("Winder Wrong Layer", 255, 0, 0);
         this.CorrectLayerIndex = WinderWorkers.ProcessesExecutor.CreateOrGetLayerIndex("Winder Correct Layer", 0, 255, 0);
         this.ModifyedLayerIndex = WinderWorkers.ProcessesExecutor.CreateOrGetLayerIndex("Winder Modifyed Layer", 0, 0, 255);
+      }
+
+      if (this.InteractiveMode) {
+        this.InteractiveLayerIndex = WinderWorkers.ProcessesExecutor.CreateOrGetLayerIndex("Winder Interactive Layer", 0, 255, 255);
       }
     }
     
@@ -177,12 +184,14 @@ namespace WinderWorkers {
       for (System.Int32 boundaryObjectIndex = 0; boundaryObjectIndex < this.BoundaryObjects.Count; boundaryObjectIndex++) {
         Rhino.DocObjects.BrepObject boundaryObject = this.BoundaryObjects[boundaryObjectIndex];
 
-        System.Int32 objectFlipPunctuation = 0;
-
         Rhino.Geometry.Mesh[] objectMeshes = Rhino.Geometry.Mesh.CreateFromBrep(
           boundaryObject.BrepGeometry,
           WinderWorkers.ProcessesExecutor.MinimalMeshingParameters
         );
+
+        System.Collections.Generic.List<System.Guid> normalCurveGuids = new System.Collections.Generic.List<System.Guid>();
+
+        System.Int32 objectFlipPunctuation = 0;
 
         foreach (Rhino.Geometry.Mesh objectMesh in objectMeshes) {
           System.Int32 facesCount = objectMesh.Faces.Count;
@@ -206,6 +215,18 @@ namespace WinderWorkers {
 
             Rhino.Geometry.Line normalLine = new Rhino.Geometry.Line(lineMin, lineMax);
             Rhino.Geometry.Curve normalCurve = normalLine.ToNurbsCurve();
+            
+            if (this.InteractiveMode) {
+              Rhino.DocObjects.ObjectAttributes curveAttributes = new Rhino.DocObjects.ObjectAttributes {
+                LayerIndex = this.InteractiveLayerIndex
+              };
+
+              System.Guid normalCurveGuid = Rhino.RhinoDoc.ActiveDoc.Objects.AddCurve(normalCurve, curveAttributes);
+
+              Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+
+              normalCurveGuids.Add(normalCurveGuid);
+            }
 
             System.Collections.Generic.List<Rhino.Geometry.Point3d> importantPoints = new System.Collections.Generic.List<Rhino.Geometry.Point3d> {
               lineMin,
@@ -297,7 +318,7 @@ namespace WinderWorkers {
               if (summationVector.Length < subtractionVector.Length) {
                 objectFlipPunctuation += 1;
               }
-            }
+            }     
           }
         }
       
@@ -331,6 +352,13 @@ namespace WinderWorkers {
 
         if (this.VerboseMode) {
           Rhino.RhinoApp.WriteLine($"Winder: Analyzed boundary object {boundaryObjectIndex + 1} of {this.BoundaryObjects.Count}");
+        }
+
+        if (this.InteractiveMode) {
+          foreach (System.Guid normalCurveGuid in normalCurveGuids) {
+            Rhino.RhinoDoc.ActiveDoc.Objects.Delete(normalCurveGuid, true);
+            Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+          }
         }
       }
     }
