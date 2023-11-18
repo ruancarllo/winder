@@ -12,6 +12,8 @@ namespace WinderLogistics {
     }
   }
 
+  [Rhino.Commands.CommandStyle(Rhino.Commands.Style.ScriptRunner)]
+
   public class ExternalCommand : Rhino.Commands.Command {
     public ExternalCommand() {
       Instance = this;
@@ -29,9 +31,7 @@ namespace WinderLogistics {
     }
 
     protected override Rhino.Commands.Result RunCommand(Rhino.RhinoDoc activeDocument, Rhino.Commands.RunMode runMode) {
-      WinderWorkers.ProcessesExecutor processesExecutor = new WinderWorkers.ProcessesExecutor();
-
-      processesExecutor.EvaluateSelectedObjects();
+      Rhino.RhinoApp.RunScript("!_Explode", false);
 
       return Rhino.Commands.Result.Success;
     }
