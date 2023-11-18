@@ -29,17 +29,6 @@ namespace WinderLogistics {
     }
 
     protected override Rhino.Commands.Result RunCommand(Rhino.RhinoDoc activeDocument, Rhino.Commands.RunMode runMode) {
-      WinderWorkers.ProcessesExecutor processesExecutor = new WinderWorkers.ProcessesExecutor(true, true, true);
-
-      processesExecutor.SetSeletedObjects();
-      processesExecutor.SetBoundaryObjects();
-      processesExecutor.SetBoundaryGeometries();
-      processesExecutor.SetJoinedGeometries();
-      processesExecutor.SetBoundaryMathematics();
-      processesExecutor.HarmonizeBoundaryNormals();
-
-      Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
-
       return Rhino.Commands.Result.Success;
     }
   }

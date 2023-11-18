@@ -1,6 +1,6 @@
-**/bin
-**/obj
+# Related to .NET
+bin
+obj
 
-**/templates
-
-.DS_Store
+# Trash files
+**/.DS_Store
