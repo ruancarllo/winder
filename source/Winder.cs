@@ -30,7 +30,7 @@ namespace Winder {
         return Rhino.Commands.Result.Nothing;
       }
 
-      // Rhino.RhinoApp.RunScript("!_Join", false);
+      Rhino.RhinoApp.RunScript("!_Join", false);
       Rhino.RhinoApp.RunScript("!_Explode", true);
 
       var unhandledLayerIndex = Winder.Helper.CreateOrGetLayerIndex("Winder Unhandled Layer", 255, 255, 255);
@@ -134,31 +134,30 @@ namespace Winder {
         var newGeometry = boundaryObject.BrepGeometry;
 
         var boundaryCentroid = boundaryObject.BrepGeometry.ClosestPoint(boundingCentroid);
-        var wasBoundaryCentroidFound = boundaryFace.ClosestPoint(boundingCentroid, out double centroidPointU, out double centroidPointV);
+        var wasBoundaryCentroidFound = boundaryFace.ClosestPoint(boundingCentroid, out double boundaryCentroidU, out double boundaryCentroidV);
 
         if (boundaryCentroid == Rhino.Geometry.Point3d.Unset || wasBoundaryCentroidFound == false) {
           newAttributes.LayerIndex = undefinedLayerIndex;
 
           Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
           Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
-
           Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
 
           continue;
         }
 
-        var centroidNormalVector = boundaryFace.NormalAt(centroidPointU, centroidPointV);
+        var centroidNormalVector = boundaryFace.NormalAt(boundaryCentroidU, boundaryCentroidV);
 
-        var positiveNormalSegment = new Rhino.Geometry.Line(boundaryCentroid, centroidNormalVector, unionDiagonalLength);
-        var negativeNormalSegment = new Rhino.Geometry.Line(boundaryCentroid, centroidNormalVector, unionDiagonalLength);
+        var positiveNormalSegment = new Rhino.Geometry.Line(boundaryCentroid, centroidNormalVector, +unionDiagonalLength);
+        var negativeNormalSegment = new Rhino.Geometry.Line(boundaryCentroid, centroidNormalVector, -unionDiagonalLength);
 
         var normalLineMax = new Rhino.Geometry.Point3d(positiveNormalSegment.ToX, positiveNormalSegment.ToY, positiveNormalSegment.ToZ);
         var normalLineMin = new Rhino.Geometry.Point3d(negativeNormalSegment.ToX, negativeNormalSegment.ToY, negativeNormalSegment.ToZ);
 
         var normalLine = new Rhino.Geometry.Line(normalLineMin, normalLineMax);
-        Rhino.Geometry.Curve normalCurve = normalLine.ToNurbsCurve();
+        var normalCurve = normalLine.ToNurbsCurve();
 
-        Rhino.RhinoDoc.ActiveDoc.Objects.AddCurve(normalCurve, interactiveAttributes);
+        var normalCurveGuid = Rhino.RhinoDoc.ActiveDoc.Objects.AddCurve(normalCurve, interactiveAttributes);
         Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
 
         var importantPoints = new System.Collections.Generic.List<Rhino.Geometry.Point3d> {normalLineMin, normalLineMax};
@@ -217,7 +216,6 @@ namespace Winder {
 
               Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
               Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
-
               Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
             }
 
@@ -252,7 +250,6 @@ namespace Winder {
 
           Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
           Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
-
           Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
         }
 
@@ -261,12 +258,36 @@ namespace Winder {
 
           Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
           Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
-
           Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+        }
+
+        Rhino.RhinoDoc.ActiveDoc.Objects.Delete(normalCurveGuid, true);
+        Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+      }
+
+      var deductedLayer = Rhino.RhinoDoc.ActiveDoc.Layers.FindIndex(deductedLayerIndex);
+      var deductedObjects = Rhino.RhinoDoc.ActiveDoc.Objects.FindByLayer(deductedLayer);
+
+      foreach (var deductedObject in deductedObjects) {
+        if (deductedObject.ObjectType == Rhino.DocObjects.ObjectType.Brep) {
+          var deductedBoundaryObject = deductedObject as Rhino.DocObjects.BrepObject;
+          
+          foreach (var boundaryObject in boundaryObjects) {
+            Rhino.Geometry.Intersect.Intersection.BrepBrep(
+              deductedBoundaryObject.BrepGeometry,
+              boundaryObject.BrepGeometry,
+              Rhino.RhinoMath.ZeroTolerance,
+              out Rhino.Geometry.Curve[] intersectionCurves,
+              out Rhino.Geometry.Point3d[] intersectionPoints
+            );
+          }
         }
       }
 
+      Rhino.RhinoDoc.ActiveDoc.Layers.Delete(interactiveLayerIndex, true);
+
       Rhino.RhinoApp.WriteLine("Winder: Finished normal vectors harmonization");
+
       return Rhino.Commands.Result.Success;
     }
   }
