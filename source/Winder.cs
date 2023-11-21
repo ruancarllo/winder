@@ -224,81 +224,33 @@ namespace Winder {
         }
       
         if (uniquePoints.Count > 2 && uniquePoints.Count % 2 != 0) {
-          var comparableCentroids = new System.Collections.Generic.List<Rhino.Geometry.Point3d>();
-                
-          foreach (var comparableObject in boundaryObjects) {
-            Rhino.Geometry.Intersect.Intersection.BrepBrep(
-              boundaryObject.BrepGeometry,
-              comparableObject.BrepGeometry,
-              Rhino.RhinoMath.ZeroTolerance,
-              out Rhino.Geometry.Curve[] intersectionCurves,
-              out Rhino.Geometry.Point3d[] intersectionPoints
-            );
+          var centerCentroidVector = new Rhino.Geometry.Vector3d(
+            boundaryCentroid.X - unionCenter.X,
+            boundaryCentroid.Y - unionCenter.Y,
+            boundaryCentroid.Z - unionCenter.Z
+          );
 
-            if (intersectionCurves.Length > 0 || intersectionPoints.Length > 0) {
-              var comparableBoundingBox = comparableObject.Geometry.GetBoundingBox(true);
-              var comparableCentroid = boundaryObject.BrepGeometry.ClosestPoint(comparableBoundingBox.Center);
+          centroidNormalVector.Unitize();
 
-              comparableCentroids.Add(comparableCentroid);
-            }
+          var summationVector = centerCentroidVector + centroidNormalVector;
+          var subtractionVector = centerCentroidVector - centroidNormalVector;
+
+          if (summationVector.Length < subtractionVector.Length) {
+            newGeometry.Flip();
+            newAttributes.LayerIndex = deductedLayerIndex;
           }
 
-          if (comparableCentroids.Count > 0) {
-            var comparableCentroidsXSum = 0.0;
-            var comparableCentroidsYSum = 0.0;
-            var comparableCentroidsZSum = 0.0;
-
-            foreach (var comparableCentroid in comparableCentroids) {
-              comparableCentroidsXSum += comparableCentroid.X;
-              comparableCentroidsYSum += comparableCentroid.Y;
-              comparableCentroidsZSum += comparableCentroid.Z;
-            }
-
-            var averageComparableCentroid = new Rhino.Geometry.Point3d(
-              comparableCentroidsXSum / comparableCentroids.Count,
-              comparableCentroidsYSum / comparableCentroids.Count,
-              comparableCentroidsZSum / comparableCentroids.Count
-            );
-
-            Rhino.RhinoDoc.ActiveDoc.Objects.AddPoint(averageComparableCentroid);
-            Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
-
-            var comparableCentroidBoundaryCentroidVector = new Rhino.Geometry.Vector3d(
-              boundaryCentroid.X - averageComparableCentroid.X,
-              boundaryCentroid.Y - averageComparableCentroid.Y,
-              boundaryCentroid.Z - averageComparableCentroid.Z
-            );
-
-            centroidNormalVector.Unitize();
-
-            var summationVector = comparableCentroidBoundaryCentroidVector + centroidNormalVector;
-            var subtractionVector = comparableCentroidBoundaryCentroidVector - centroidNormalVector;
-
-            if (summationVector.Length < subtractionVector.Length) {
-              newGeometry.Flip();
-              newAttributes.LayerIndex = deductedLayerIndex;
-            }
-
-            if (summationVector.Length > subtractionVector.Length) {
-              newAttributes.LayerIndex = deductedLayerIndex;
-            }
-
-            if (summationVector.Length == subtractionVector.Length) {
-              newAttributes.LayerIndex = undefinedLayerIndex;
-            }
-
-            Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
-            Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
-            Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+          if (summationVector.Length > subtractionVector.Length) {
+            newAttributes.LayerIndex = deductedLayerIndex;
           }
 
-          else {
+          if (summationVector.Length == subtractionVector.Length) {
             newAttributes.LayerIndex = undefinedLayerIndex;
-
-            Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
-            Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
-            Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
           }
+
+          Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
+          Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
+          Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
         }
 
         if (uniquePoints.Count <= 2) {
