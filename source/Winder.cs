@@ -140,10 +140,10 @@ namespace WinderLogistics {
         var newAttributes = boundaryObject.Attributes;
         var newGeometry = boundaryObject.BrepGeometry;
 
-        var centroidPoint = boundaryObject.BrepGeometry.ClosestPoint(boundingBoxCenter);
+        var boundaryCentroidPoint = boundaryObject.BrepGeometry.ClosestPoint(boundingBoxCenter);
         var wasCentroidPointFound = boundaryFace.ClosestPoint(boundingBoxCenter, out double centroidPointU, out double centroidPointV);
 
-        if (centroidPoint == Rhino.Geometry.Point3d.Unset || wasCentroidPointFound == false) {
+        if (boundaryCentroidPoint == Rhino.Geometry.Point3d.Unset || wasCentroidPointFound == false) {
           newAttributes.LayerIndex = wrongLayerIndex;
 
           Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
@@ -164,7 +164,7 @@ namespace WinderLogistics {
           continue;
         }
 
-        var centerCentroidVector = centroidPoint - boundaryUnionCenter;
+        var centerCentroidVector = boundaryCentroidPoint - boundaryUnionCenter;
         var couldUnitizeCenterCentroidVector = centerCentroidVector.Unitize();
 
         if (couldUnitizeCenterCentroidVector == false) {
@@ -177,9 +177,123 @@ namespace WinderLogistics {
         }
 
         var centerCentroidLine = new Rhino.Geometry.Line(boundaryUnionCenter, centerCentroidVector * boundaryUnionDiagonalLength);
+        Rhino.Geometry.Curve centerCentroidCurve = centerCentroidLine.ToNurbsCurve();
+
+        var centerCentroidCurveMax = centerCentroidLine.To;
         
-        Rhino.RhinoDoc.ActiveDoc.Objects.AddLine(centerCentroidLine);
+        var centerCentroidCurveGuid = Rhino.RhinoDoc.ActiveDoc.Objects.AddCurve(centerCentroidCurve, defaultInteractiveAttributes);
         Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+
+        var importantPointsList = new System.Collections.Generic.List<Rhino.Geometry.Point3d> {
+          boundaryUnionCenter,
+          centerCentroidCurveMax
+        };
+
+        foreach (Rhino.Geometry.Brep joinedBoundaryGeometry in joinedBoundaryGeometries) {
+          Rhino.Geometry.Intersect.Intersection.CurveBrep(
+            centerCentroidCurve,
+            joinedBoundaryGeometry,
+            Rhino.RhinoMath.ZeroTolerance,
+            out Rhino.Geometry.Curve[] overlapCurves,
+            out Rhino.Geometry.Point3d[] intersectionPoints
+          );
+
+          foreach (Rhino.Geometry.Point3d intersectionPoint in intersectionPoints) {
+            importantPointsList.Add(intersectionPoint);
+          }
+        }
+
+        var uniquePointsHashSet = new System.Collections.Generic.HashSet<Rhino.Geometry.Point3d>(importantPointsList);
+          
+        var uniqueImportantPointsList = new System.Collections.Generic.List<Rhino.Geometry.Point3d>(uniquePointsHashSet);
+
+        if (uniqueImportantPointsList.Count % 2 == 0) {
+          System.Collections.Generic.List<Rhino.Geometry.Point3d> alignedPointsList = new System.Collections.Generic.List<Rhino.Geometry.Point3d>(uniqueImportantPointsList);
+          
+          alignedPointsList.Sort(
+            (Rhino.Geometry.Point3d point1, Rhino.Geometry.Point3d point2) => point1.DistanceTo(centerCentroidCurveMax).CompareTo(point2.DistanceTo(centerCentroidCurveMax))
+          );
+
+          System.Boolean isNextSegmentInside = false;
+
+          for (System.Int32 alignedPointIndex = 0; alignedPointIndex < alignedPointsList.Count - 1; alignedPointIndex++) {
+            Rhino.Geometry.Point3d analyzingPoint = alignedPointsList[alignedPointIndex];
+
+            if (analyzingPoint.DistanceTo(boundaryCentroidPoint) < WinderLogistics.StaticMechanisms.MaximumDistanceTolerance) {
+              System.Double dotProduct = 0.0;
+
+              if (isNextSegmentInside) {
+                Rhino.Geometry.Point3d posteriorPoint = alignedPointsList[alignedPointIndex + 1];
+
+                Rhino.Geometry.Vector3d desiredVector = new Rhino.Geometry.Vector3d(
+                  posteriorPoint.X - analyzingPoint.X,
+                  posteriorPoint.Y - analyzingPoint.Y,
+                  posteriorPoint.Z - analyzingPoint.Z
+                );
+
+                dotProduct = centroidNormalVector * desiredVector;
+              }
+
+              else {
+                Rhino.Geometry.Point3d anteriorPoint = alignedPointsList[alignedPointIndex - 1];
+
+                Rhino.Geometry.Vector3d desiredVector = new Rhino.Geometry.Vector3d(
+                  anteriorPoint.X - analyzingPoint.X,
+                  anteriorPoint.Y - analyzingPoint.Y,
+                  anteriorPoint.Z - analyzingPoint.Z
+                );
+
+                dotProduct = centroidNormalVector * desiredVector;
+              }
+
+              if (dotProduct > 0) {
+                newGeometry.Flip();
+
+                newAttributes.LayerIndex = flippedLayerIndex;
+              }
+
+              if (dotProduct < 0) {
+                newAttributes.LayerIndex = correctLayerIndex;
+              }
+
+              if (dotProduct == 0) {
+                newAttributes.LayerIndex = wrongLayerIndex;
+              }
+
+              Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
+              Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
+            }
+
+            isNextSegmentInside = !isNextSegmentInside;
+          }
+        }
+      
+        else {
+          centroidNormalVector.Unitize();
+
+          var summationVector = centerCentroidVector + centroidNormalVector;
+          var subtractionVector = centerCentroidVector - centroidNormalVector;
+
+          if (summationVector.Length < subtractionVector.Length) {
+            newGeometry.Flip();
+
+            newAttributes.LayerIndex = deductedLayerIndex;
+          }
+
+          if (summationVector.Length > subtractionVector.Length) {
+            newAttributes.LayerIndex = correctLayerIndex;
+          }
+
+          if (summationVector.Length == subtractionVector.Length) {
+            newAttributes.LayerIndex = wrongLayerIndex;
+          }
+
+          Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
+          Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
+        }
+
+        // Rhino.RhinoDoc.ActiveDoc.Objects.Delete(centerCentroidCurveGuid, true);
+        // Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
       }
 
       return Rhino.Commands.Result.Success;
@@ -207,5 +321,7 @@ namespace WinderLogistics {
         return layerIndex;
       }
     }
-  }
+
+    public static readonly double MaximumDistanceTolerance = 0.001;
+  } 
 }
