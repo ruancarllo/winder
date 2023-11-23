@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 [assembly: System.Runtime.InteropServices.Guid("039b4c68-60fb-4b38-8f1f-e9e093618bc6")]
 
 namespace Winder {
@@ -10,7 +12,6 @@ namespace Winder {
   }
 
   [Rhino.Commands.CommandStyle(Rhino.Commands.Style.ScriptRunner)]
-
   public class Command : Rhino.Commands.Command {
     public Command() {
       Instance = this;
@@ -21,7 +22,7 @@ namespace Winder {
     public override System.String EnglishName => "Winder";
 
     protected override Rhino.Commands.Result RunCommand(Rhino.RhinoDoc activeDocument, Rhino.Commands.RunMode runMode) {
-      var selectedObjects = new System.Collections.Generic.List<Rhino.DocObjects.RhinoObject>(
+      System.Collections.Generic.List<Rhino.DocObjects.RhinoObject> selectedObjects = new System.Collections.Generic.List<Rhino.DocObjects.RhinoObject>(
         Rhino.RhinoDoc.ActiveDoc.Objects.GetSelectedObjects(false, false)
       );
 
@@ -33,35 +34,35 @@ namespace Winder {
       Rhino.RhinoApp.RunScript("!_Join", false);
       Rhino.RhinoApp.RunScript("!_Explode", true);
 
-      var unhandledLayerIndex = Winder.Helper.CreateOrGetLayerIndex("Winder Unhandled Layer", 255, 255, 255);
-      var undefinedLayerIndex = Winder.Helper.CreateOrGetLayerIndex("Winder Undefined Layer", 255, 0, 0);
-      var unflippedLayerIndex = Winder.Helper.CreateOrGetLayerIndex("Winder Unflipped Layer", 0, 255, 0);
-      var flippedLayerIndex = Winder.Helper.CreateOrGetLayerIndex("Winder Flipped Layer", 0, 0, 255);
-      var deductedLayerIndex = Winder.Helper.CreateOrGetLayerIndex("Winder Deducted Layer", 255, 16, 240);
-      var interactiveLayerIndex = Winder.Helper.CreateOrGetLayerIndex("Winder Interactive Layer", 0, 255, 255);
+      System.Int32 unhandledLayerIndex = Winder.Helpers.CreateOrGetLayerIndex("Winder Unhandled Layer", 255, 255, 255);
+      System.Int32 undefinedLayerIndex = Winder.Helpers.CreateOrGetLayerIndex("Winder Undefined Layer", 255, 0, 0);
+      System.Int32 unflippedLayerIndex = Winder.Helpers.CreateOrGetLayerIndex("Winder Unflipped Layer", 0, 255, 0);
+      System.Int32 flippedLayerIndex = Winder.Helpers.CreateOrGetLayerIndex("Winder Flipped Layer", 0, 0, 255);
+      System.Int32 deductedLayerIndex = Winder.Helpers.CreateOrGetLayerIndex("Winder Deducted Layer", 255, 16, 240);
+      System.Int32 interactiveLayerIndex = Winder.Helpers.CreateOrGetLayerIndex("Winder Interactive Layer", 0, 255, 255);
 
-      var interactiveAttributes = new Rhino.DocObjects.ObjectAttributes {
+      Rhino.DocObjects.ObjectAttributes interactiveAttributes = new Rhino.DocObjects.ObjectAttributes {
         LayerIndex = interactiveLayerIndex
       };
       
-      var explodedObjects = new System.Collections.Generic.List<Rhino.DocObjects.RhinoObject>(
+      System.Collections.Generic.List<Rhino.DocObjects.RhinoObject> explodedObjects = new System.Collections.Generic.List<Rhino.DocObjects.RhinoObject>(
         Rhino.RhinoDoc.ActiveDoc.Objects.GetSelectedObjects(false, false)
       );
 
-      for (var objectIndex = 0; objectIndex < explodedObjects.Count; objectIndex++) {
-        var originalObject = explodedObjects[objectIndex];
+      for (System.Int32 objectIndex = 0; objectIndex < explodedObjects.Count; objectIndex++) {
+        Rhino.DocObjects.RhinoObject originalObject = explodedObjects[objectIndex];
 
-        var objectAttributes = originalObject.Attributes;
-        var objectGeometry = originalObject.Geometry;
+        Rhino.DocObjects.ObjectAttributes objectAttributes = originalObject.Attributes;
+        Rhino.Geometry.GeometryBase objectGeometry = originalObject.Geometry;
 
         objectAttributes.LayerIndex = unhandledLayerIndex;
 
-        var modifyedObjectGuid = Rhino.RhinoDoc.ActiveDoc.Objects.Add(objectGeometry, objectAttributes);
-        var modifyedObject = Rhino.RhinoDoc.ActiveDoc.Objects.Find(modifyedObjectGuid);
+        System.Guid modifyedObjectGuid = Rhino.RhinoDoc.ActiveDoc.Objects.Add(objectGeometry, objectAttributes);
+        Rhino.DocObjects.RhinoObject modifyedObject = Rhino.RhinoDoc.ActiveDoc.Objects.Find(modifyedObjectGuid);
 
         explodedObjects[objectIndex] = modifyedObject;
 
-        var wasDeletionSucceeded = Rhino.RhinoDoc.ActiveDoc.Objects.Delete(originalObject);
+        System.Boolean wasDeletionSucceeded = Rhino.RhinoDoc.ActiveDoc.Objects.Delete(originalObject);
 
         if (wasDeletionSucceeded == false) {
           Rhino.RhinoApp.WriteLine("Winder: Ssome object could not be deleted");
@@ -71,7 +72,7 @@ namespace Winder {
         Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
       }
 
-      foreach (var documentLayer in Rhino.RhinoDoc.ActiveDoc.Layers) {
+      foreach (Rhino.DocObjects.Layer documentLayer in Rhino.RhinoDoc.ActiveDoc.Layers) {
         if (documentLayer.Index == unhandledLayerIndex) continue;
         if (documentLayer.Index == undefinedLayerIndex) continue;
         if (documentLayer.Index == unflippedLayerIndex) continue;
@@ -82,198 +83,67 @@ namespace Winder {
         Rhino.RhinoDoc.ActiveDoc.Layers.Delete(documentLayer);
       }
 
-      var boundaryObjects = new System.Collections.Generic.List<Rhino.DocObjects.BrepObject>();
+      System.Collections.Generic.List<Rhino.DocObjects.BrepObject> boundaryObjects = new System.Collections.Generic.List<Rhino.DocObjects.BrepObject>();
 
-      var explodedBoundaries = new System.Collections.Generic.List<Rhino.Geometry.Brep>();
-      var joinedBoundaries = new System.Collections.Generic.List<Rhino.Geometry.Brep>();
+      System.Collections.Generic.List<Rhino.Geometry.Brep> explodedBoundaries = new System.Collections.Generic.List<Rhino.Geometry.Brep>();
+      System.Collections.Generic.List<Rhino.Geometry.Brep> joinedBoundaries = new System.Collections.Generic.List<Rhino.Geometry.Brep>();
 
-      foreach (var explodedObject in explodedObjects) {
+      foreach (Rhino.DocObjects.RhinoObject explodedObject in explodedObjects) {
         if (explodedObject.ObjectType == Rhino.DocObjects.ObjectType.Brep) {
-          var boundaryObject = explodedObject as Rhino.DocObjects.BrepObject;
-          var boundaryGeometry = boundaryObject.BrepGeometry;
+          Rhino.DocObjects.BrepObject boundaryObject = explodedObject as Rhino.DocObjects.BrepObject;
+          Rhino.Geometry.Brep boundaryGeometry = boundaryObject.BrepGeometry;
 
           boundaryObjects.Add(boundaryObject);
           explodedBoundaries.Add(boundaryGeometry);
         }
       }
 
-      var boundariesJunction = Rhino.Geometry.Brep.JoinBreps(explodedBoundaries, Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance);
+      Rhino.Geometry.Brep[] boundariesJunction = Rhino.Geometry.Brep.JoinBreps(explodedBoundaries, Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance);
 
       if (boundariesJunction == null) {
         Rhino.RhinoApp.WriteLine("Winder: Boundary geometries could not be joined");
         return Rhino.Commands.Result.Failure;
       }
 
-      foreach (var joinedBoundary in boundariesJunction) {
+      foreach (Rhino.Geometry.Brep joinedBoundary in boundariesJunction) {
         joinedBoundaries.Add(joinedBoundary);
       }
 
-      var unitedBoundingBox = Rhino.Geometry.BoundingBox.Empty;
-      var boundingCentroids = new System.Collections.Generic.List<Rhino.Geometry.Point3d>();
+      Rhino.Geometry.BoundingBox unitedBoundingBox = Rhino.Geometry.BoundingBox.Empty;
+      System.Collections.Generic.List<Rhino.Geometry.Point3d> boundingCentroids = new System.Collections.Generic.List<Rhino.Geometry.Point3d>();
 
-      for (var objectIndex = 0; objectIndex < boundaryObjects.Count; objectIndex++) {
-        var boundaryObject = boundaryObjects[objectIndex];
+      for (System.Int32 objectIndex = 0; objectIndex < boundaryObjects.Count; objectIndex++) {
+        Rhino.DocObjects.BrepObject boundaryObject = boundaryObjects[objectIndex];
 
-        var objectBoundingBox = boundaryObject.Geometry.GetBoundingBox(true);
-        var boundingBoxCenter = objectBoundingBox.Center;
+        Rhino.Geometry.BoundingBox objectBoundingBox = boundaryObject.Geometry.GetBoundingBox(true);
+        Rhino.Geometry.Point3d boundingBoxCenter = objectBoundingBox.Center;
 
         unitedBoundingBox.Union(objectBoundingBox);
         boundingCentroids.Add(boundingBoxCenter);
       }
 
-      var unionDiagonalLength = unitedBoundingBox.Diagonal.Length;
-      var unionCenter = unitedBoundingBox.Center;
+      System.Double unionDiagonalLength = unitedBoundingBox.Diagonal.Length;
+      Rhino.Geometry.Point3d unionCenter = unitedBoundingBox.Center;
 
-      for (var objectIndex = 0; objectIndex < boundaryObjects.Count; objectIndex++) {
-        var boundaryObject = boundaryObjects[objectIndex];
+      Rhino.Geometry.Vector3d inflationVector = new Rhino.Geometry.Vector3d(
+        Winder.Helpers.DefaultInflationValue,
+        Winder.Helpers.DefaultInflationValue,
+        Winder.Helpers.DefaultInflationValue
+      );
 
-        var boundaryFace = boundaryObject.BrepGeometry.Faces[0];
-        var boundingCentroid = boundingCentroids[objectIndex];
+      Rhino.Geometry.BoundingBox inflatedBoundingBox = new Rhino.Geometry.BoundingBox(
+        unitedBoundingBox.Min - inflationVector,
+        unitedBoundingBox.Max + inflationVector
+      );
 
-        var newAttributes = boundaryObject.Attributes;
-        var newGeometry = boundaryObject.BrepGeometry;
-
-        var boundaryCentroid = boundaryObject.BrepGeometry.ClosestPoint(boundingCentroid);
-        var wasBoundaryCentroidFound = boundaryFace.ClosestPoint(boundingCentroid, out double boundaryCentroidU, out double boundaryCentroidV);
-
-        if (boundaryCentroid == Rhino.Geometry.Point3d.Unset || wasBoundaryCentroidFound == false) {
-          newAttributes.LayerIndex = undefinedLayerIndex;
-
-          Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
-          Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
-          Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
-
-          continue;
-        }
-
-        var centroidNormalVector = boundaryFace.NormalAt(boundaryCentroidU, boundaryCentroidV);
-
-        var positiveNormalSegment = new Rhino.Geometry.Line(boundaryCentroid, centroidNormalVector, +unionDiagonalLength);
-        var negativeNormalSegment = new Rhino.Geometry.Line(boundaryCentroid, centroidNormalVector, -unionDiagonalLength);
-
-        var normalLineMax = new Rhino.Geometry.Point3d(positiveNormalSegment.ToX, positiveNormalSegment.ToY, positiveNormalSegment.ToZ);
-        var normalLineMin = new Rhino.Geometry.Point3d(negativeNormalSegment.ToX, negativeNormalSegment.ToY, negativeNormalSegment.ToZ);
-
-        var normalLine = new Rhino.Geometry.Line(normalLineMin, normalLineMax);
-        var normalCurve = normalLine.ToNurbsCurve();
-
-        var normalCurveGuid = Rhino.RhinoDoc.ActiveDoc.Objects.AddCurve(normalCurve, interactiveAttributes);
-        Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
-
-        var importantPoints = new System.Collections.Generic.List<Rhino.Geometry.Point3d> {normalLineMin, normalLineMax};
-
-        foreach (Rhino.Geometry.Brep joinedBoundary in joinedBoundaries) {
-          Rhino.Geometry.Intersect.Intersection.CurveBrep(
-            normalCurve,
-            joinedBoundary,
-            Rhino.RhinoMath.ZeroTolerance,
-            out Rhino.Geometry.Curve[] overlapCurves,
-            out Rhino.Geometry.Point3d[] intersectionPoints
-          );
-
-          foreach (Rhino.Geometry.Point3d intersectionPoint in intersectionPoints) {
-            importantPoints.Add(intersectionPoint);
-          }
-        }
-
-        var uniquePoints = new System.Collections.Generic.List<Rhino.Geometry.Point3d>(
-          new System.Collections.Generic.HashSet<Rhino.Geometry.Point3d>(importantPoints)
-        );
-
-        if (uniquePoints.Count > 2 && uniquePoints.Count % 2 == 0) {
-          var alignedPoints = new System.Collections.Generic.List<Rhino.Geometry.Point3d>(uniquePoints);
-          alignedPoints.Sort((point1, point2) => point1.DistanceTo(normalLineMin).CompareTo(point2.DistanceTo(normalLineMin)));
-
-          var isNextSegmentInside = false;
-
-          for (int pointIndex = 0; pointIndex < alignedPoints.Count - 1; pointIndex++) {
-            var analyzingPoint = alignedPoints[pointIndex];
-
-            if (analyzingPoint.DistanceTo(boundaryCentroid) < Winder.Helper.MaximumDistanceTolerance) {
-              var comparativeIndex = isNextSegmentInside ? +1 : -1;
-              var comparativePoint = alignedPoints[pointIndex + comparativeIndex];
-
-              var desiredVector = new Rhino.Geometry.Vector3d(
-                comparativePoint.X - analyzingPoint.X,
-                comparativePoint.Y - analyzingPoint.Y,
-                comparativePoint.Z - analyzingPoint.Z
-              );
-
-              var dotProduct = centroidNormalVector * desiredVector;
-
-              if (dotProduct > 0) {
-                newGeometry.Flip();
-                newAttributes.LayerIndex = flippedLayerIndex;
-              }
-
-              if (dotProduct < 0) {
-                newAttributes.LayerIndex = unflippedLayerIndex;
-              }
-
-              if (dotProduct == 0) {
-                newAttributes.LayerIndex = undefinedLayerIndex;
-              }
-
-              Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
-              Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
-              Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
-            }
-
-            isNextSegmentInside = !isNextSegmentInside;
-          }
-        }
-      
-        if (uniquePoints.Count > 2 && uniquePoints.Count % 2 != 0) {
-          var centerCentroidVector = new Rhino.Geometry.Vector3d(
-            boundaryCentroid.X - unionCenter.X,
-            boundaryCentroid.Y - unionCenter.Y,
-            boundaryCentroid.Z - unionCenter.Z
-          );
-
-          centroidNormalVector.Unitize();
-
-          var summationVector = centerCentroidVector + centroidNormalVector;
-          var subtractionVector = centerCentroidVector - centroidNormalVector;
-
-          if (summationVector.Length < subtractionVector.Length) {
-            newGeometry.Flip();
-            newAttributes.LayerIndex = deductedLayerIndex;
-          }
-
-          if (summationVector.Length > subtractionVector.Length) {
-            newAttributes.LayerIndex = deductedLayerIndex;
-          }
-
-          if (summationVector.Length == subtractionVector.Length) {
-            newAttributes.LayerIndex = undefinedLayerIndex;
-          }
-
-          Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
-          Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
-          Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
-        }
-
-        if (uniquePoints.Count <= 2) {
-          newAttributes.LayerIndex = undefinedLayerIndex;
-
-          Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
-          Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
-          Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
-        }
-
-        Rhino.RhinoDoc.ActiveDoc.Objects.Delete(normalCurveGuid, true);
-        Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
-      }
-
-      Rhino.RhinoDoc.ActiveDoc.Layers.Delete(interactiveLayerIndex, true);
-
-      Rhino.RhinoApp.WriteLine("Winder: Finished normal vectors harmonization");
+      Rhino.RhinoDoc.ActiveDoc.Objects.Add(Rhino.Geometry.Brep.CreateFromBox(inflatedBoundingBox));
+      Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
 
       return Rhino.Commands.Result.Success;
     }
   }
 
-  public class Helper {
+  public class Helpers {
     public static System.Int32 CreateOrGetLayerIndex(System.String name, System.Int16 red, System.Int16 green, System.Int16 blue) {
       Rhino.DocObjects.Layer existingLayer = Rhino.RhinoDoc.ActiveDoc.Layers.FindName(name);
 
@@ -295,6 +165,7 @@ namespace Winder {
       }
     }
 
-    public static readonly double MaximumDistanceTolerance = 0.001;
+    public static readonly System.Double DefaultInflationValue = 10;
+    public static readonly System.Double MaximumDistanceTolerance = 0.001;
   }
 }

@@ -2,5 +2,8 @@
 bin
 obj
 
+# Related to Rhino
+*.3dm.rhi
+
 # Trash files
 **/.DS_Store

@@ -36,8 +36,8 @@ void main() async {
 
     await Process.run('dotnet', ['build']);
 
-    if (!await Directory(pluginDestinationPath).exists()) {
-      await Directory(pluginDestinationPath).create(recursive: true);
+    if (!await Directory(pluginDestinationPath).parent.exists()) {
+      await Directory(pluginDestinationPath).parent.create(recursive: true);
     }
 
     await File(pluginAssemblyPath).copy(pluginDestinationPath);
