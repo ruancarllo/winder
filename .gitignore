@@ -2,5 +2,8 @@
 bin
 obj
 
+# Related to Rhinoceros
+*.3dm.rhl
+
 # Trash files
 **/.DS_Store

@@ -239,7 +239,7 @@ namespace WinderHandlers {
                 );
 
                 this.BoundaryIntegrationMidpoints.Add(segmentMidpoint);
-                Rhino.RhinoDoc.ActiveDoc.Objects.AddLine(interiorRaySegment);
+                Rhino.RhinoDoc.ActiveDoc.Objects.AddLine(interiorRaySegment, this.InteractiveAttributes);
               }
 
               isNextRaySegmentInside = !isNextRaySegmentInside;
@@ -280,7 +280,7 @@ namespace WinderHandlers {
     
     public static System.Double DefaultOrthogonalMarginSize = 1;
 
-    public static System.Int32 DefaultXIntegrationRaysCount = 5;
+    public static System.Int32 DefaultXIntegrationRaysCount = 100;
     public static System.Int32 DefaultZIntegrationRaysCount = 100;
   }
 }
