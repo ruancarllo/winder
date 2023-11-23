@@ -22,7 +22,7 @@ void main() async {
 
     await File(pluginAssemblyPath).copy(pluginDestinationPath);
 
-    await Process.start(rhinocerosExecutablePath, ['/nosplash', '/new']);
+    await Process.start(rhinocerosExecutablePath, ['/nosplash', '/new', '.\\mocks\\example.3dm']);
   }
 
   if (Platform.isMacOS) {
@@ -42,6 +42,6 @@ void main() async {
 
     await File(pluginAssemblyPath).copy(pluginDestinationPath);
 
-    await Process.start(rhinocerosExecutablePath, ['-nosplash', '-new']);
+    await Process.start(rhinocerosExecutablePath, ['-nosplash', '-new', './mocks/example.3dm']);
   }
 }
