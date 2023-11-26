@@ -34,20 +34,46 @@ namespace WinderLogistics {
 
       try {
         processesExecutor.VerifyObjectsSelection();
+        Rhino.RhinoApp.WriteLine("Winder: Verified objects selection");
 
         Rhino.RhinoApp.RunScript("!_Join", false);
         Rhino.RhinoApp.RunScript("!_Explode", false);
         
         processesExecutor.DefineEssentialLayers();
+        Rhino.RhinoApp.WriteLine("Winder: Defined essential layers");
+
         processesExecutor.DefineInteractiveAttributes();
+        Rhino.RhinoApp.WriteLine("Winder: Defined interactive attributes");
+
         processesExecutor.RegisterExplodedSelectedObjects();
+        Rhino.RhinoApp.WriteLine("Winder: Registered exploded selected objects");
+
         processesExecutor.RepaintExplodedSelectedObjects();
+        Rhino.RhinoApp.WriteLine("Winder: Repainted exploded selected objects");
+
         processesExecutor.DeleteUnessentialLayers();
+        Rhino.RhinoApp.WriteLine("Winder: Deleted unessential layers");
+
         processesExecutor.FilterExplodedBoundaryObjects();
+        Rhino.RhinoApp.WriteLine("Winder: Filtered exploded boundary objects");
+
         processesExecutor.SetFragmentedBoundaries();
+        Rhino.RhinoApp.WriteLine("Winder: Setted fragmented boundaries");
+
         processesExecutor.SetConnectedBoundaries();
+        Rhino.RhinoApp.WriteLine("Winder: Setted connected boundaries");
+
         processesExecutor.DefineBoundaryCollectionAttributes();
+        Rhino.RhinoApp.WriteLine("Winder: Defined boundary collection attributes");
+
         processesExecutor.FindBoundaryIntegrationMidpoints();
+        Rhino.RhinoApp.WriteLine("Winder: Found boundary integration midpoints");
+
+        processesExecutor.HarmonizeExplodedBoundaryObjectsNormals();
+        Rhino.RhinoApp.WriteLine("Winder: Harmonized exploded boundary objects normals");
+
+        processesExecutor.DeleteInteractiveLayer();
+        Rhino.RhinoApp.WriteLine("Winder: Deleted interactive layer");
 
         return Rhino.Commands.Result.Success;
       }
