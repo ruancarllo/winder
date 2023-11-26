@@ -36,7 +36,7 @@ namespace WinderLogistics {
         processesExecutor.VerifyObjectsSelection();
         Rhino.RhinoApp.WriteLine("Winder: Verified objects selection");
 
-        Rhino.RhinoApp.RunScript("!_Join", false);
+        // Rhino.RhinoApp.RunScript("!_Join", false);
         Rhino.RhinoApp.RunScript("!_Explode", false);
         
         processesExecutor.DefineEssentialLayers();

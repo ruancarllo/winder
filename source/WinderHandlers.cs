@@ -186,7 +186,7 @@ namespace WinderHandlers {
             Rhino.Geometry.Intersect.Intersection.CurveBrep(
               integrationRayCurve,
               joinedBoundary,
-              Rhino.RhinoMath.ZeroTolerance,
+              WinderHandlers.StaticBundles.DefaultIntersectionTolerance,
               out Rhino.Geometry.Curve[] overlapCurves,
               out Rhino.Geometry.Point3d[] intersectionPoints
             );
@@ -236,12 +236,12 @@ namespace WinderHandlers {
     public void HarmonizeExplodedBoundaryObjectsNormals() {
       for (System.Int32 objectIndex = 0; objectIndex < this.ExplodedBoundaryObjects.Count; objectIndex++) {
         Rhino.DocObjects.BrepObject boundaryObject = this.ExplodedBoundaryObjects[objectIndex];
-
         Rhino.Geometry.BrepFace boundaryFace = boundaryObject.BrepGeometry.Faces[0];
+
         Rhino.Geometry.Point3d boundingBoxCentroid = this.BoundaryCollectionBoundingBoxCentroids[objectIndex];
 
-        Rhino.DocObjects.ObjectAttributes newAttributes = boundaryObject.Attributes;
         Rhino.Geometry.Brep newGeometry = boundaryObject.BrepGeometry;
+        Rhino.DocObjects.ObjectAttributes newAttributes = boundaryObject.Attributes;
 
         Rhino.Geometry.Point3d boundaryCentroid = boundaryObject.BrepGeometry.ClosestPoint(boundingBoxCentroid);
         System.Boolean wasBoundaryCentroidFound = boundaryFace.ClosestPoint(boundingBoxCentroid, out double boundaryCentroidU, out double boundaryCentroidV);
@@ -276,7 +276,7 @@ namespace WinderHandlers {
           Rhino.Geometry.Intersect.Intersection.CurveBrep(
             normalCurve,
             joinedBoundary,
-            Rhino.RhinoMath.ZeroTolerance,
+            WinderHandlers.StaticBundles.DefaultIntersectionTolerance,
             out Rhino.Geometry.Curve[] overlapCurves,
             out Rhino.Geometry.Point3d[] intersectionPoints
           );
@@ -286,13 +286,13 @@ namespace WinderHandlers {
           }
         }
 
-        System.Collections.Generic.HashSet<Rhino.Geometry.Point3d> normalImportantPointsHashet = new System.Collections.Generic.HashSet<Rhino.Geometry.Point3d>(normalImportantPoints);
-        System.Collections.Generic.List<Rhino.Geometry.Point3d> normalUniqueImportantPoints = new System.Collections.Generic.List<Rhino.Geometry.Point3d>(normalImportantPointsHashet);
+        System.Collections.Generic.HashSet<Rhino.Geometry.Point3d> importantNormalPointsHashet = new System.Collections.Generic.HashSet<Rhino.Geometry.Point3d>(normalImportantPoints);
+        System.Collections.Generic.List<Rhino.Geometry.Point3d> uniqueNormalImportantPoints = new System.Collections.Generic.List<Rhino.Geometry.Point3d>(importantNormalPointsHashet);
 
-        if (normalUniqueImportantPoints.Count > 2 && normalUniqueImportantPoints.Count % 2 == 0) {
-          System.Collections.Generic.List<Rhino.Geometry.Point3d> alignedPoints = new System.Collections.Generic.List<Rhino.Geometry.Point3d>(normalUniqueImportantPoints);
+        if (uniqueNormalImportantPoints.Count > 2 && uniqueNormalImportantPoints.Count % 2 == 0) { 
+          System.Collections.Generic.List<Rhino.Geometry.Point3d> alignedUniqueNormalPoints = new System.Collections.Generic.List<Rhino.Geometry.Point3d>(uniqueNormalImportantPoints);
           
-          alignedPoints.Sort(
+          alignedUniqueNormalPoints.Sort(
             (Rhino.Geometry.Point3d point1, Rhino.Geometry.Point3d point2) => {
               return point1.DistanceTo(normalLineMin).CompareTo(point2.DistanceTo(normalLineMin));
             }
@@ -300,12 +300,12 @@ namespace WinderHandlers {
 
           System.Boolean isNextSegmentInside = false;
 
-          for (System.Int32 pointIndex = 0; pointIndex < alignedPoints.Count - 1; pointIndex++) {
-            Rhino.Geometry.Point3d analyzingNormalPoint = alignedPoints[pointIndex];
+          for (System.Int32 normalPointIndex = 0; normalPointIndex < alignedUniqueNormalPoints.Count - 1; normalPointIndex++) {
+            Rhino.Geometry.Point3d analyzingNormalPoint = alignedUniqueNormalPoints[normalPointIndex];
 
             if (analyzingNormalPoint.DistanceTo(boundaryCentroid) < WinderHandlers.StaticBundles.MaximumDistanceTolerance) {
               System.Int32 comparativeDirectionIndex = isNextSegmentInside ? +1 : -1;
-              Rhino.Geometry.Point3d comparativeNormalPoint = alignedPoints[pointIndex + comparativeDirectionIndex];
+              Rhino.Geometry.Point3d comparativeNormalPoint = alignedUniqueNormalPoints[normalPointIndex + comparativeDirectionIndex];
 
               Rhino.Geometry.Vector3d desiredNormalVector = new Rhino.Geometry.Vector3d(
                 comparativeNormalPoint.X - analyzingNormalPoint.X,
@@ -328,8 +328,8 @@ namespace WinderHandlers {
                 newAttributes.LayerIndex = this.UndefinedLayerIndex;
               }
 
-              Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
               Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
+              Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
               Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
             }
 
@@ -337,37 +337,135 @@ namespace WinderHandlers {
           }
         }
       
-        if (normalUniqueImportantPoints.Count > 2 && normalUniqueImportantPoints.Count % 2 != 0) {
-          Rhino.Geometry.Vector3d centerCentroidVector = new Rhino.Geometry.Vector3d(
-            boundaryCentroid.X - this.BoundaryCollectionCenter.X,
-            boundaryCentroid.Y - this.BoundaryCollectionCenter.Y,
-            boundaryCentroid.Z - this.BoundaryCollectionCenter.Z
+        if (uniqueNormalImportantPoints.Count > 2 && uniqueNormalImportantPoints.Count % 2 != 0) {
+          uniqueNormalImportantPoints.Add(boundaryCentroid);
+
+          System.Collections.Generic.List<Rhino.Geometry.Point3d> alignedUniqueNormalPoints = new System.Collections.Generic.List<Rhino.Geometry.Point3d>(uniqueNormalImportantPoints);
+          
+          alignedUniqueNormalPoints.Sort(
+            (Rhino.Geometry.Point3d point1, Rhino.Geometry.Point3d point2) => {
+              return point1.DistanceTo(normalLineMin).CompareTo(point2.DistanceTo(normalLineMin));
+            }
           );
 
-          boundaryCentroidNormalVector.Unitize();
+          System.Boolean isBoundaryObjectLimitropher = false;
 
-          Rhino.Geometry.Vector3d summationVector = centerCentroidVector + boundaryCentroidNormalVector;
-          Rhino.Geometry.Vector3d subtractionVector = centerCentroidVector - boundaryCentroidNormalVector;
-
-          if (summationVector.Length < subtractionVector.Length) {
-            newGeometry.Flip();
-            newAttributes.LayerIndex = this.DeductedLayerIndex;
+          for (System.Int32 normalPointIndex = 0; normalPointIndex < alignedUniqueNormalPoints.Count; normalPointIndex++) {
+            Rhino.Geometry.Point3d analyzingNormalPoint = alignedUniqueNormalPoints[normalPointIndex];
+            
+            if (analyzingNormalPoint.DistanceTo(boundaryCentroid) < WinderHandlers.StaticBundles.MaximumDistanceTolerance) {
+              if (normalPointIndex == 1 || normalPointIndex == alignedUniqueNormalPoints.Count - 2) {
+                isBoundaryObjectLimitropher = true;
+              }
+            }
           }
 
-          if (summationVector.Length > subtractionVector.Length) {
-            newAttributes.LayerIndex = this.DeductedLayerIndex;
+          if (isBoundaryObjectLimitropher == true) {
+            Rhino.Geometry.Vector3d centerCentroidVector = new Rhino.Geometry.Vector3d(
+              boundaryCentroid.X - this.BoundaryCollectionCenter.X,
+              boundaryCentroid.Y - this.BoundaryCollectionCenter.Y,
+              boundaryCentroid.Z - this.BoundaryCollectionCenter.Z
+            );
+
+            boundaryCentroidNormalVector.Unitize();
+
+            Rhino.Geometry.Vector3d summationVector = centerCentroidVector + boundaryCentroidNormalVector;
+            Rhino.Geometry.Vector3d subtractionVector = centerCentroidVector - boundaryCentroidNormalVector;
+
+            if (summationVector.Length < subtractionVector.Length) {
+              newGeometry.Flip();
+              newAttributes.LayerIndex = this.FlippedLayerIndex;
+            }
+
+            if (summationVector.Length > subtractionVector.Length) {
+              newAttributes.LayerIndex = this.UnflippedLayerIndex;
+            }
+
+            if (summationVector.Length == subtractionVector.Length) {
+              newAttributes.LayerIndex = this.UndefinedLayerIndex;
+            }
+
+            Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
+            Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
+            Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
           }
 
-          if (summationVector.Length == subtractionVector.Length) {
-            newAttributes.LayerIndex = this.UndefinedLayerIndex;
-          }
+          else {
+            Rhino.Geometry.Point3d nearestIntegrationMidpoint = Rhino.Geometry.Point3d.Unset;
+            System.Double nearestIntegrationMidpointDistance = System.Double.MaxValue;
 
-          Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
-          Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
-          Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+            foreach (Rhino.Geometry.Point3d boundaryIntegrationMidpoint in this.BoundaryIntegrationMidpoints) {
+              System.Double integrationMidpointDistance = boundaryCentroid.DistanceTo(boundaryIntegrationMidpoint);
+
+              if (integrationMidpointDistance < nearestIntegrationMidpointDistance) {
+                nearestIntegrationMidpoint = boundaryIntegrationMidpoint;
+                nearestIntegrationMidpointDistance = integrationMidpointDistance;
+              }
+            }
+
+            if (nearestIntegrationMidpoint != Rhino.Geometry.Point3d.Unset) {
+              Rhino.Geometry.Vector3d midpointCentroidVector = new Rhino.Geometry.Vector3d(
+                boundaryCentroid.X - nearestIntegrationMidpoint.X,
+                boundaryCentroid.Y - nearestIntegrationMidpoint.Y,
+                boundaryCentroid.Z - nearestIntegrationMidpoint.Z
+              );
+
+              boundaryCentroidNormalVector.Unitize();
+
+              Rhino.Geometry.Vector3d summationVector = midpointCentroidVector + boundaryCentroidNormalVector;
+              Rhino.Geometry.Vector3d subtractionVector = midpointCentroidVector - boundaryCentroidNormalVector;
+
+              if (summationVector.Length < subtractionVector.Length) {
+                newGeometry.Flip();
+                newAttributes.LayerIndex = this.DeductedLayerIndex;
+              }
+
+              if (summationVector.Length > subtractionVector.Length) {
+                newAttributes.LayerIndex = this.DeductedLayerIndex;
+              }
+
+              if (summationVector.Length == subtractionVector.Length) {
+                newAttributes.LayerIndex = this.UndefinedLayerIndex;
+              }
+
+              Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
+              Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
+              Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+            }
+
+            else {
+              Rhino.Geometry.Vector3d centerCentroidVector = new Rhino.Geometry.Vector3d(
+                boundaryCentroid.X - this.BoundaryCollectionCenter.X,
+                boundaryCentroid.Y - this.BoundaryCollectionCenter.Y,
+                boundaryCentroid.Z - this.BoundaryCollectionCenter.Z
+              );
+
+              boundaryCentroidNormalVector.Unitize();
+
+              Rhino.Geometry.Vector3d summationVector = centerCentroidVector + boundaryCentroidNormalVector;
+              Rhino.Geometry.Vector3d subtractionVector = centerCentroidVector - boundaryCentroidNormalVector;
+
+              if (summationVector.Length < subtractionVector.Length) {
+                newGeometry.Flip();
+                newAttributes.LayerIndex = this.DeductedLayerIndex;
+              }
+
+              if (summationVector.Length > subtractionVector.Length) {
+                newAttributes.LayerIndex = this.DeductedLayerIndex;
+              }
+
+              if (summationVector.Length == subtractionVector.Length) {
+                newAttributes.LayerIndex = this.UndefinedLayerIndex;
+              }
+
+              Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
+              Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
+              Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+            }
+          }
         }
 
-        if (normalUniqueImportantPoints.Count <= 2) {
+        if (uniqueNormalImportantPoints.Count <= 2) {
           newAttributes.LayerIndex = this.UndefinedLayerIndex;
 
           Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
@@ -407,6 +505,7 @@ namespace WinderHandlers {
       }
     }
 
+    public static System.Double DefaultIntersectionTolerance = 0.001;
     public static System.Double MaximumDistanceTolerance = 0.001;
     
     public static System.Double DefaultOrthogonalMarginSize = 1;
