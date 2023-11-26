@@ -4,6 +4,7 @@ obj
 
 # Related to Rhinoceros
 *.3dm.rhl
+*.3dmbak
 
 # Trash files
 **/.DS_Store

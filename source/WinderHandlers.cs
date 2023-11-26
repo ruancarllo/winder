@@ -177,9 +177,6 @@ namespace WinderHandlers {
           Rhino.Geometry.Line integrationRayLine = new Rhino.Geometry.Line(integrationRayStart, integrationRayEnd);
           Rhino.Geometry.Curve integrationRayCurve = integrationRayLine.ToNurbsCurve();
 
-          System.Guid integrationRayCurveGuid = Rhino.RhinoDoc.ActiveDoc.Objects.AddCurve(integrationRayCurve, this.InteractiveAttributes);
-          Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
-
           System.Collections.Generic.List<Rhino.Geometry.Point3d> rayImportantPoints = new System.Collections.Generic.List<Rhino.Geometry.Point3d> {
             integrationRayStart,
             integrationRayEnd
@@ -232,9 +229,6 @@ namespace WinderHandlers {
               isNextRaySegmentInside = !isNextRaySegmentInside;
             }
           }
-        
-          Rhino.RhinoDoc.ActiveDoc.Objects.Delete(integrationRayCurveGuid, true);
-          Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
         }
       }
     }
