@@ -114,3 +114,9 @@ To compile the plugin, install it on your machine, and open an instance of Rhino
 ```shell
 dart scripts/debug.dart
 ```
+
+## Demonstration
+
+<p align="center">
+  <img src="./docs/command-timelapse.gif">
+</p>
