@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Title>Winder</Title>
-    <Description>A command that harmonize an object normals</Description>
+    <Description>A plug-in to harmonize normals of an object in Rhinoceros</Description>
   </PropertyGroup>
   <PropertyGroup>
     <Version>1.0</Version>
