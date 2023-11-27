@@ -76,7 +76,7 @@ Subsequently, these integration rays are subdivided into segments that will alte
 
 > Note that this process of finding a point belonging to the internal region of the solid is closely related to the idea of transferring the generic reference from the **center** of the bounding box of this solid to a reference closer to a **centroid** of a certain surface.
 
-Thus, if the inconclusive surface analyzed is a boundary — meaning the point from which its normal vector emanates is the second or penultimate among the points its secant ray intersects — the reference for the direction of this normal vector remains the generic center of the bounding box. Otherwise, the centroid calculated by integration is used as a reference.
+Thus, if the inconclusive surface analyzed is limitropher — meaning the point from which its normal vector emanates is the second or penultimate among the points its secant ray intersects — the reference for the direction of this normal vector remains the generic center of the bounding box. Otherwise, the centroid calculated by integration is used as a reference.
 
 In both approaches, a vector $\vec{V}$ is considered that starts from this reference point and goes to the point from which the normal vector $\vec{N}$ of the surface emanates, modeling three situations:
 
