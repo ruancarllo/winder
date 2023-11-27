@@ -63,8 +63,10 @@ namespace WinderHandlers {
         if (wasModificationSucceeded == false) {
           throw new System.Exception("Winder: Some object could not be repainted");
         }
-        
-        Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+
+        if (objectIndex % WinderHandlers.StaticBundles.DefaultInteractiveDensity == 0 || objectIndex == this.ExplodedSelectedObjects.Count - 1) {
+          Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+        }
       }
     }
 
@@ -153,6 +155,8 @@ namespace WinderHandlers {
       System.Double integrationRaysXDistance = inflatedBoundingBoxXLength / (WinderHandlers.StaticBundles.DefaultXIntegrationRaysCount + 1);
       System.Double integrationRaysZDistance = inflatedBoundingBoxZLength / (WinderHandlers.StaticBundles.DefaultZIntegrationRaysCount + 1);
 
+      System.Collections.Generic.List<System.Guid> integrationRayCurveGuids = new System.Collections.Generic.List<System.Guid>();
+
       for (System.Int32 zIntegrationRaysCount = 1; zIntegrationRaysCount <= WinderHandlers.StaticBundles.DefaultZIntegrationRaysCount; zIntegrationRaysCount++) {
         for (System.Int32 xIntegrationRaysCount = 1; xIntegrationRaysCount <= WinderHandlers.StaticBundles.DefaultXIntegrationRaysCount; xIntegrationRaysCount++) {
           Rhino.Geometry.Point3d integrationRayStart = new Rhino.Geometry.Point3d(
@@ -169,6 +173,9 @@ namespace WinderHandlers {
 
           Rhino.Geometry.Line integrationRayLine = new Rhino.Geometry.Line(integrationRayStart, integrationRayEnd);
           Rhino.Geometry.Curve integrationRayCurve = integrationRayLine.ToNurbsCurve();
+
+          System.Guid integrationRayCurveGuid = Rhino.RhinoDoc.ActiveDoc.Objects.AddCurve(integrationRayCurve);
+          integrationRayCurveGuids.Add(integrationRayCurveGuid);
 
           System.Collections.Generic.List<Rhino.Geometry.Point3d> rayImportantPoints = new System.Collections.Generic.List<Rhino.Geometry.Point3d> {
             integrationRayStart,
@@ -223,7 +230,15 @@ namespace WinderHandlers {
             }
           }
         }
+
+        Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
       }
+
+      foreach (System.Guid integrationRayCurveGuid in integrationRayCurveGuids) {
+        Rhino.RhinoDoc.ActiveDoc.Objects.Delete(integrationRayCurveGuid, true);
+      }
+
+      Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
     }
   
     public void HarmonizeExplodedBoundaryObjectsNormals() {
@@ -261,7 +276,10 @@ namespace WinderHandlers {
         Rhino.Geometry.Curve normalCurve = normalLine.ToNurbsCurve();
 
         System.Guid normalCurveGuid = Rhino.RhinoDoc.ActiveDoc.Objects.AddCurve(normalCurve, this.InteractiveAttributes);
-        Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+
+        if (objectIndex % WinderHandlers.StaticBundles.DefaultInteractiveDensity == 0 || objectIndex == this.ExplodedSelectedObjects.Count - 1) {
+          Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+        }
 
         System.Collections.Generic.List<Rhino.Geometry.Point3d> normalImportantPoints = new System.Collections.Generic.List<Rhino.Geometry.Point3d> {normalLineMin, normalLineMax};
 
@@ -323,7 +341,6 @@ namespace WinderHandlers {
 
               Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
               Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
-              Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
             }
 
             isNextSegmentInside = !isNextSegmentInside;
@@ -380,7 +397,6 @@ namespace WinderHandlers {
 
             Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
             Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
-            Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
           }
 
           else {
@@ -423,7 +439,6 @@ namespace WinderHandlers {
 
               Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
               Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
-              Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
             }
 
             else {
@@ -453,7 +468,6 @@ namespace WinderHandlers {
 
               Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
               Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
-              Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
             }
           }
         }
@@ -463,11 +477,13 @@ namespace WinderHandlers {
 
           Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
           Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
-          Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
         }
 
         Rhino.RhinoDoc.ActiveDoc.Objects.Delete(normalCurveGuid, true);
-        Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+
+        if (objectIndex % WinderHandlers.StaticBundles.DefaultInteractiveDensity == 0 || objectIndex == this.ExplodedSelectedObjects.Count - 1) {
+          Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+        }
       }
     }
 
@@ -505,5 +521,7 @@ namespace WinderHandlers {
 
     public static System.Int32 DefaultXIntegrationRaysCount = 150;
     public static System.Int32 DefaultZIntegrationRaysCount = 100;
+
+    public static System.Int32 DefaultInteractiveDensity = 14;
   }
 }
