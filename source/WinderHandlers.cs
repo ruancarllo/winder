@@ -55,22 +55,15 @@ namespace WinderHandlers {
       for (System.Int32 objectIndex = 0; objectIndex < this.ExplodedSelectedObjects.Count; objectIndex++) {
         Rhino.DocObjects.RhinoObject originalObject = this.ExplodedSelectedObjects[objectIndex];
 
-        Rhino.DocObjects.ObjectAttributes objectAttributes = originalObject.Attributes;
-        Rhino.Geometry.GeometryBase objectGeometry = originalObject.Geometry;
+        Rhino.DocObjects.ObjectAttributes newAttributes = originalObject.Attributes;
+        newAttributes.LayerIndex = this.UnhandledLayerIndex;
 
-        objectAttributes.LayerIndex = this.UnhandledLayerIndex;
+        System.Boolean wasModificationSucceeded = Rhino.RhinoDoc.ActiveDoc.Objects.ModifyAttributes(originalObject, newAttributes, true);
 
-        System.Guid modifyedObjectGuid = Rhino.RhinoDoc.ActiveDoc.Objects.Add(objectGeometry, objectAttributes);
-        Rhino.DocObjects.RhinoObject modifyedObject = Rhino.RhinoDoc.ActiveDoc.Objects.Find(modifyedObjectGuid);
-
-        this.ExplodedSelectedObjects[objectIndex] = modifyedObject;
-
-        System.Boolean wasDeletionSucceeded = Rhino.RhinoDoc.ActiveDoc.Objects.Delete(originalObject);
-
-        if (wasDeletionSucceeded == false) {
-          throw new System.Exception("Winder: Ssome object could not be deleted");
+        if (wasModificationSucceeded == false) {
+          throw new System.Exception("Winder: Some object could not be repainted");
         }
-
+        
         Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
       }
     }
