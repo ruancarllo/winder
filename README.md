@@ -65,11 +65,25 @@ $$
 And the start $I_0$ and end $I$ points of each integration ray are defined by the following relationship:
 
 $$
-\sum I_0 = \sum_{i_x=1}^{d_x} \sum_{i_z=1}^{d_z} \begin{bmatrix} B_0x + S_x \times i_x \\ B_0y \\ B_0z + S_z \times i_z \end{bmatrix} \\
+\sum I_0 =
+\sum_{i_x=1}^{d_x}
+\sum_{i_z=1}^{d_z}
+\begin{bmatrix}
+B_0x + S_x \times i_x \\
+B_0y \\
+B_0z + S_z \times i_z \\
+\end{bmatrix}
 $$
 
 $$
-\sum I = \sum_{i_x=1}^{d_x} \sum_{i_z=1}^{d_z} \begin{bmatrix} B_0x + S_x \times i_x \\ B_y \\ B_0z + S_z \times i_z \end{bmatrix}
+\sum I =
+\sum_{i_x=1}^{d_x}
+\sum_{i_z=1}^{d_z}
+\begin{bmatrix}
+B_0x + S_x \times i_x \\
+B_y \\
+B_0z + S_z \times i_z \\
+\end{bmatrix}
 $$
 
 Subsequently, these integration rays are subdivided into segments that will alternate between the external and internal parts of the figure if they intersect an even number of objects. From these segments, midpoints are defined that act as a possible reference to determine the direction of the normal vector of its nearest surface.
