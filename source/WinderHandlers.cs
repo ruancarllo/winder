@@ -503,7 +503,7 @@ namespace WinderHandlers {
     
     public static System.Double DefaultOrthogonalMarginSize = 1;
 
-    public static System.Int32 DefaultXIntegrationRaysCount = 100;
+    public static System.Int32 DefaultXIntegrationRaysCount = 150;
     public static System.Int32 DefaultZIntegrationRaysCount = 100;
   }
 }
