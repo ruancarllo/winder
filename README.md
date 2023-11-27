@@ -1,4 +1,4 @@
-# [Winder](https://github.com/ruancarllo/winder) &middot; ![License](https://img.shields.io/badge/License-BSD--3--Clause_Clear-blue?style=flat-square) ![Framework](https://img.shields.io/badge/Framework-.NET_4.8-blueviolet?style=flat-square)
+# [Winder](https://github.com/ruancarllo/winder) &middot; ![License](https://img.shields.io/badge/License-BSD--3--Clause_Clear-blue?style=flat-square) ![Framework](https://img.shields.io/badge/Framework-.NET_4.8-blueviolet?style=flat-square) ![Language](https://img.shields.io/badge/Language-C%23-teal?style=flat-square)
 
 Winder is a plugin for the **harmonization of normal vectors** of solids manageable by [Rhinoceros](https://www.rhino3d.com), a powerful 3D modeling software. This process aims to orient all surfaces of a selected set of objects to their own exterior, preparing them for 3D printing.
 
