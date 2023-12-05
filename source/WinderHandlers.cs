@@ -72,14 +72,14 @@ namespace WinderHandlers {
 
     public void DeleteUnessentialLayers() {
       foreach (Rhino.DocObjects.Layer documentLayer in Rhino.RhinoDoc.ActiveDoc.Layers) {
-        if (documentLayer.Index == this.InteractiveLayerIndex) continue;
-        if (documentLayer.Index == this.UnhandledLayerIndex) continue;
-        if (documentLayer.Index == this.UndefinedLayerIndex) continue;
-        if (documentLayer.Index == this.UnflippedLayerIndex) continue;
-        if (documentLayer.Index == this.DeductedLayerIndex) continue;
-        if (documentLayer.Index == this.FlippedLayerIndex) continue;
+        if (documentLayer.LayerIndex == this.InteractiveLayerIndex) continue;
+        if (documentLayer.LayerIndex == this.UnhandledLayerIndex) continue;
+        if (documentLayer.LayerIndex == this.UndefinedLayerIndex) continue;
+        if (documentLayer.LayerIndex == this.UnflippedLayerIndex) continue;
+        if (documentLayer.LayerIndex == this.DeductedLayerIndex) continue;
+        if (documentLayer.LayerIndex == this.FlippedLayerIndex) continue;
 
-        Rhino.RhinoDoc.ActiveDoc.Layers.Delete(documentLayer);
+        Rhino.RhinoDoc.ActiveDoc.Layers.Delete(documentLayer.LayerIndex, true);
       }
     }
 
@@ -174,7 +174,7 @@ namespace WinderHandlers {
           Rhino.Geometry.Line integrationRayLine = new Rhino.Geometry.Line(integrationRayStart, integrationRayEnd);
           Rhino.Geometry.Curve integrationRayCurve = integrationRayLine.ToNurbsCurve();
 
-          System.Guid integrationRayCurveGuid = Rhino.RhinoDoc.ActiveDoc.Objects.AddCurve(integrationRayCurve);
+          System.Guid integrationRayCurveGuid = Rhino.RhinoDoc.ActiveDoc.Objects.AddCurve(integrationRayCurve, InteractiveAttributes);
           integrationRayCurveGuids.Add(integrationRayCurveGuid);
 
           System.Collections.Generic.List<Rhino.Geometry.Point3d> rayImportantPoints = new System.Collections.Generic.List<Rhino.Geometry.Point3d> {
@@ -258,7 +258,7 @@ namespace WinderHandlers {
           newAttributes.LayerIndex = this.UndefinedLayerIndex;
 
           Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
-          Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
+          Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject, true);
           Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
 
           continue;
@@ -340,7 +340,7 @@ namespace WinderHandlers {
               }
 
               Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
-              Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
+              Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject, true);
             }
 
             isNextSegmentInside = !isNextSegmentInside;
@@ -396,7 +396,7 @@ namespace WinderHandlers {
             }
 
             Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
-            Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
+            Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject, true);
           }
 
           else {
@@ -438,7 +438,7 @@ namespace WinderHandlers {
               }
 
               Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
-              Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
+              Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject, true);
             }
 
             else {
@@ -467,7 +467,7 @@ namespace WinderHandlers {
               }
 
               Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
-              Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
+              Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject, true);
             }
           }
         }
@@ -476,7 +476,7 @@ namespace WinderHandlers {
           newAttributes.LayerIndex = this.UndefinedLayerIndex;
 
           Rhino.RhinoDoc.ActiveDoc.Objects.Add(newGeometry, newAttributes);
-          Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject);
+          Rhino.RhinoDoc.ActiveDoc.Objects.Delete(boundaryObject, true);
         }
 
         Rhino.RhinoDoc.ActiveDoc.Objects.Delete(normalCurveGuid, true);
@@ -494,9 +494,9 @@ namespace WinderHandlers {
 
   public class StaticBundles {
     public static System.Int32 CreateOrGetLayerIndex(System.String name, System.Int16 red, System.Int16 green, System.Int16 blue) {
-      Rhino.DocObjects.Layer existingLayer = Rhino.RhinoDoc.ActiveDoc.Layers.FindName(name);
+      System.Int32 existingLayerIndex = Rhino.RhinoDoc.ActiveDoc.Layers.Find(name, true);
 
-      if (existingLayer == null) {
+      if (existingLayerIndex == -1) {
         Rhino.DocObjects.Layer createdLayer = new Rhino.DocObjects.Layer() {
           Name = name,
           Color = System.Drawing.Color.FromArgb(red, green, blue),
@@ -509,8 +509,7 @@ namespace WinderHandlers {
       }
 
       else {
-        System.Int32 layerIndex = existingLayer.Index;
-        return layerIndex;
+        return existingLayerIndex;
       }
     }
 

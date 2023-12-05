@@ -4,8 +4,18 @@ void main() async {
   if (Platform.isWindows) {
     final String currentUserName = Platform.script.toFilePath().split(Platform.pathSeparator)[2];
 
-    const String rhinocerosExecutablePath = 'C:\\Program Files\\Rhino 7\\System\\Rhino.exe';
-    final String rhinocerosPluginsDirectory = 'C:\\Users\\$currentUserName\\AppData\\Roaming\\McNeel\\Rhinoceros\\7.0\\Plug-ins';
+    String? rhinocerosExecutablePath;
+    String? rhinocerosPluginsDirectory;
+
+    if (await File('C:\\Program Files\\Rhino 7\\System\\Rhino.exe').exists()) {
+      rhinocerosExecutablePath = 'C:\\Program Files\\Rhino 7\\System\\Rhino.exe';
+      rhinocerosPluginsDirectory = 'C:\\Users\\$currentUserName\\AppData\\Roaming\\McNeel\\Rhinoceros\\7.0\\Plug-ins';
+    }
+
+    if (await File('C:\\Program Files\\Rhinoceros 5 (64-bit)\\System\\Rhino.exe').exists()) {
+      rhinocerosExecutablePath = 'C:\\Program Files\\Rhinoceros 5 (64-bit)\\System\\Rhino.exe';
+      rhinocerosPluginsDirectory = 'C:\\Users\\$currentUserName\\AppData\\Roaming\\McNeel\\Rhinoceros\\5.0\\Plug-ins';
+    }
 
     const String pluginComplementaryDirectory = 'Winder (039b4c68-60fb-4b38-8f1f-e9e093618bc6)\\1.0.0.0';
 
@@ -14,15 +24,17 @@ void main() async {
 
     final String pluginDestinationPath = [rhinocerosPluginsDirectory, pluginComplementaryDirectory, pluginAssemblyName].join(Platform.pathSeparator);
 
-    await Process.run('dotnet', ['build']);
+    if (rhinocerosExecutablePath != null && rhinocerosPluginsDirectory != null) {
+      await Process.run('dotnet', ['build']);
 
-    if (!await File(pluginDestinationPath).parent.exists()) {
-      await File(pluginDestinationPath).parent.create(recursive: true);
+      if (!await File(pluginDestinationPath).parent.exists()) {
+        await File(pluginDestinationPath).parent.create(recursive: true);
+      }
+
+      await File(pluginAssemblyPath).copy(pluginDestinationPath);
+
+      await Process.start(rhinocerosExecutablePath, ['/nosplash', '/new', '.\\mocks\\example.3dm']);
     }
-
-    await File(pluginAssemblyPath).copy(pluginDestinationPath);
-
-    await Process.start(rhinocerosExecutablePath, ['/nosplash', '/new', '.\\mocks\\example.3dm']);
   }
 
   if (Platform.isMacOS) {

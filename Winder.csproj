@@ -9,6 +9,6 @@
     <TargetFramework>net48</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="RhinoCommon" Version="8.0.23304.9001"/>
+    <Reference Include="C:\Program Files\Rhinoceros 5 (64-bit)\System\RhinoCommon.dll"/>
   </ItemGroup>
 </Project>
